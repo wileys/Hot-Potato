@@ -9,7 +9,7 @@
 
 var tapCount = 0
 
-var impulse = 300
+var impulse = 0
 var impulseDown = 0
 
 
@@ -35,9 +35,11 @@ class Ball: SKSpriteNode {
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-    
+    /* Scaling for each milestone reached */
+        
         switch tapCount {
         case 1:
+            impulse = 300
             impulseDown = -3
         case 5:
             impulse = 400
@@ -47,20 +49,42 @@ class Ball: SKSpriteNode {
             impulseDown = -7
         case 15:
             impulse = 600
-            impulseDown = -9
+            impulseDown = -8
         case 20:
+            impulse = 650
+            impulseDown = -9
+        case 25:
             impulse = 700
-            impulseDown = -12
+            impulseDown = -10
         default: break
         }
         
-//        
-//        let touch = touches.first!
-//        
-//        
-//        /* Get touch position in scene */
-//        let location = touch.location(in:self)
+
+/* If user taps for the first time, after the animation and countdown, randomly spawn on one side of the screen */
         
+        if tapCount == 0 && timer >= 3 {
+            
+            let rand = arc4random_uniform(100)
+            
+            
+            if rand < 50 {
+                /* 50 chance of top */
+                
+                position.y = CGFloat(1234)
+//                tapCount += 1
+                print(rand)
+                
+            } else if rand > 50 {
+                /* 50 chance of bottom */
+                
+                position.y = CGFloat(100)
+//                tapCount += 1
+                print(rand)
+                
+            }
+            
+            
+        }
         
         /* Was touch on left/right hand of screen? */
         
@@ -72,19 +96,30 @@ class Ball: SKSpriteNode {
                 
                 /* Apply vertical impulse */
                 physicsBody?.applyImpulse(CGVector(dx: 100, dy: -impulse))
-                tapCount += 1
+//                tapCount += 1
+                
+                changeColorTop = true
                 
             } else if position.y < height/2 {
                 physicsBody?.velocity = CGVector(dx:0, dy:0)
                 
                 /* Apply vertical impulse */
                 physicsBody?.applyImpulse(CGVector(dx: 100, dy: impulse))
-                tapCount += 1
+//                tapCount += 1
+                
+                changeColorBottom = true
             }
+            
             
         }
         
+        tapCount += 1
+        
+        
+
+        
     }
 
+    
     
 }

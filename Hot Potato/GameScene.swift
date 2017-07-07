@@ -16,22 +16,39 @@ enum GameState {
     case playing, gameOver
 }
 
+var gameState: GameState = .playing
+
+var teamWorkMode = true
+
+var changeColorBottom = false
+var changeColorTop = false
+
 var height: CGFloat = 1334
 var width: CGFloat = 750
+
+var timer: CFTimeInterval = 0
+let fixedDelta: CFTimeInterval = 1.0 / 60.0
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var ball: Ball!
     var deathBar: SKSpriteNode!
-    var timer: CFTimeInterval = 0
     var paddleTimer: CFTimeInterval = 0
-    let fixedDelta: CFTimeInterval = 1.0 / 60.0
     var topWin: SKLabelNode!
     var bottomWin: SKLabelNode!
     var countDown: SKSpriteNode!
-    var gameState: GameState = .playing
     var restartButton: MSButtonNode!
-
+    var menuButton: MSButtonNode!
+    var topWon = true
+    var colorList = [UIColor]()
+    var bottomHalf: SKSpriteNode!
+    var topHalf: SKSpriteNode!
+    let turquoise = UIColor(red:0.54, green:0.69, blue:0.67, alpha:1.0)
+    let pink = UIColor(red:0.67, green:0.39, blue:0.45, alpha:1.0)
+    let green = UIColor(red:0.71, green:0.73, blue:0.45, alpha:1.0)
+    let darkPurple = UIColor(red:0.22, green:0.13, blue:0.38, alpha:1.0)
+    let lightPurple = UIColor(red:0.49, green:0.44, blue:0.53, alpha:1.0)
+    let blue = UIColor(red:0.18, green:0.59, blue:0.76, alpha:1.0)
     
     
     override func didMove(to view: SKView) {
@@ -41,6 +58,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bottomWin = childNode(withName:"bottomWin") as! SKLabelNode
         countDown = childNode(withName: "countDown") as! SKSpriteNode
         restartButton = childNode(withName: "restartButton") as! MSButtonNode
+        menuButton = childNode(withName: "menuButton") as! MSButtonNode
+        
+        bottomHalf = childNode(withName: "bottomHalf") as! SKSpriteNode
+        topHalf = childNode(withName: "topHalf") as! SKSpriteNode
         
         topWin.isHidden = true
         bottomWin.isHidden = true
@@ -50,10 +71,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         ball.isUserInteractionEnabled = true
 
+        colorList.append(turquoise)
+        
+        colorList.append(pink)
+        
+        colorList.append(green)
+
         
         restartButton.selectedHandler = {
-            print("Workin")
-            self.gameState = .playing
+            
+            
+           
+            gameState = .playing
+            
             let skView = self.view as SKView!
             
             /* Load Game scene */
@@ -66,10 +96,38 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             /* Restart GameScene */
             skView?.presentScene(scene)
+            self.ball.isUserInteractionEnabled = true
+
+
+            
+        }
+        
+        menuButton.selectedHandler = {
+            
+            
+           
+            gameState = .playing
+            
+            let skView = self.view as SKView!
+            
+            /* Load Game scene */
+            guard let scene = GameScene(fileNamed:"MainMenu") as GameScene! else {
+                return
+            }
+            
+            /* Ensure correct aspect mode */
+            scene.scaleMode = .aspectFill
+            
+            /* Restart GameScene */
+            skView?.presentScene(scene)
+            self.ball.isUserInteractionEnabled = true
+            
+            
             
         }
         
         restartButton.state = .MSButtonNodeStateHidden
+        menuButton.state = .MSButtonNodeStateHidden
 
         
         let count = SKAction(named: "Count")!
@@ -77,49 +135,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let sequence = SKAction.sequence([count,remove])
         countDown.run(sequence)
         
-        
+
         
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
     
-        if tapCount == 0 && timer >= 3 {
-            
-            let rand = arc4random_uniform(100)
-            
-            
-            if rand < 50 {
-                /* 50 chance of top */
-                
-                ball.position.y = CGFloat(1234)
-                tapCount += 1
-                print(rand)
-                
-            } else if rand > 50 {
-                /* 50 chance of bottom */
-                
-                ball.position.y = CGFloat(100)
-                tapCount += 1
-                print(rand)
+        if gameState != .playing { return }
 
-            }
-
-//            if location.y > size.height/2 {
-//                ball.physicsBody?.velocity = CGVector(dx:0, dy:0)
-//                
-//                
-//                /* Apply vertical impulse */
-//                ball.physicsBody?.applyImpulse(CGVector(dx: 100, dy: -impulse))
-//                tapCount += 1
-//                
-//            } else if location.y < size.height/2 {
-//                ball.physicsBody?.velocity = CGVector(dx:0, dy:0)
-//                
-//                /* Apply vertical impulse */
-//                ball.physicsBody?.applyImpulse(CGVector(dx: 100, dy: impulse))
-//                tapCount += 1
-//            }
-        }
+        
     
     
     
@@ -131,12 +155,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         timer += fixedDelta
         checkGravity()
+        updateBall()
+        changeColors()
+        
+        
     }
     
     func didBegin (_ contact: SKPhysicsContact) {
         
 
-        let pulse:SKAction = SKAction.init(named: "Pulse")!
         
         
         /* Get references to bodies involved */
@@ -151,36 +178,58 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         
         if nodeA.name == "deathBar" || nodeB.name == "deathBar" {
-            
+            let pulse:SKAction = SKAction.init(named: "Pulse")!
+
             ball.physicsBody?.velocity = CGVector(dx:0, dy:0)
             self.physicsWorld.gravity = CGVector(dx:0, dy:0)
             ball.physicsBody?.angularVelocity = 0
             ball.run(pulse)
-            
-            
+
+                /* Let bokeh fly if you hit the ground*/
+                if let particles = SKEmitterNode(fileNamed: "Bokeh.sks") {
+                    particles.position = CGPoint(x: ball.position.x + 90, y: ball.position.y)
+                    addChild(particles)
+                    
+                }
+
+                /* if ball hits the ground, do this */
             
             if ball.position.y > size.height/2 {
-                bottomWin.isHidden = false
                 gameState = .gameOver
                 restartButton.state = .MSButtonNodeStateActive
+                menuButton.state = .MSButtonNodeStateActive
+                topWon = false
+                impulse = 0
                 impulseDown = 0
                 tapCount = 0
-                
+                ball.isUserInteractionEnabled = false
+                animate()
 
-                
-                
             } else if ball.position.y < size.height/2 {
-                topWin.isHidden = false
                 gameState = .gameOver
                 restartButton.state = .MSButtonNodeStateActive
-
+                menuButton.state = .MSButtonNodeStateActive
+                topWon = true
+                impulse = 0
                 impulseDown = 0
                 tapCount = 0
+                ball.isUserInteractionEnabled = false
+                
+                animate()
+                
+                /* Let bokeh fly if you hit the ground*/
+                if let particles = SKEmitterNode(fileNamed: "Bokeh.sks") {
+                    particles.position = CGPoint(x: ball.position.x + 90, y: ball.position.y)
+                    addChild(particles)
+                    print("asasd")
+                }
+                
                 
             }
             
             
-            return
+            
+            
             
             
         }
@@ -192,5 +241,80 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
     }
     
+    func changeColors() {
+        if changeColorBottom == true {
+            let randomNumber = arc4random_uniform(3)
+            if randomNumber == 1 {
+                bottomHalf.color = lightPurple
+            } else if randomNumber == 2 {
+                bottomHalf.color = green
+            } else {
+                bottomHalf.color = turquoise
+            }
+            
+            
+            changeColorBottom = false
+        } else if changeColorTop == true {
+            let randomNumber = arc4random_uniform(3)
+            if randomNumber == 1 {
+                topHalf.color = blue
+            } else if randomNumber == 2 {
+                topHalf.color = pink
+            } else {
+                topHalf.color = darkPurple
+            }
+            
+            
+            changeColorTop = false
+
+        }
+        
+        
+    }
+    
+    func animate() {
+        
+        /* Sets pulse and scale animations when game over */
+        
+        
+        
+        let scale:SKAction = SKAction.init(named: "Scale")!
+        let sequence = SKAction.sequence([scale])
+        if teamWorkMode == false {
+            if topWon == false {
+                bottomWin.isHidden = false
+                bottomWin.run(sequence)
+                return
+                
+            } else if topWon == true {
+                topWin.isHidden = false
+                topWin.run(sequence)
+                return
+                 
+            }
+        }
+        
+        
+    }
+    
+    func updateBall() {
+        ball.physicsBody?.mass = 0.3
+        if tapCount > 10 {
+            ball.texture = SKTexture(imageNamed:"Untitled-1")
+            ball.physicsBody?.mass = 0.35
+            
+        }
+        
+        if tapCount > 15 {
+            ball.texture = SKTexture(imageNamed:"baseball")
+            ball.physicsBody?.mass = 0.28
+        }
+        
+        if tapCount > 20 {
+            ball.texture = SKTexture(imageNamed:"soccerball")
+            ball.physicsBody?.mass = 0.3
+        }
+        
+    }
     
 }
