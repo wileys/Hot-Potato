@@ -36,29 +36,54 @@ class Ball: SKSpriteNode {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
     /* Scaling for each milestone reached */
+       /* Make easier for team work mode, more ralleys */
+        if teamWorkMode == false {
+            switch tapCount {
+            case 1:
+                impulse = 300
+                impulseDown = -3
+            case 5:
+                impulse = 400
+                impulseDown = -5
+            case 10:
+                impulse = 500
+                impulseDown = -7
+            case 15:
+                impulse = 600
+                impulseDown = -8
+            case 20:
+                impulse = 650
+                impulseDown = -9
+            case 25:
+                impulse = 700
+                impulseDown = -10
+            default: break
+            }
+            
+        } else {
+            switch tapCount {
+            case 1:
+                impulse = 300
+                impulseDown = -3
+            case 10:
+                impulse = 350
+                impulseDown = -5
+            case 15:
+                impulse = 400
+                impulseDown = -7
+            case 20:
+                impulse = 450
+                impulseDown = -8
+            case 25:
+                impulse = 500
+                impulseDown = -9
+            case 30:
+                impulse = 550
+                impulseDown = -10
+            default: break
+            }
         
-        switch tapCount {
-        case 1:
-            impulse = 300
-            impulseDown = -3
-        case 5:
-            impulse = 400
-            impulseDown = -5
-        case 10:
-            impulse = 500
-            impulseDown = -7
-        case 15:
-            impulse = 600
-            impulseDown = -8
-        case 20:
-            impulse = 650
-            impulseDown = -9
-        case 25:
-            impulse = 700
-            impulseDown = -10
-        default: break
         }
-        
 
 /* If user taps for the first time, after the animation and countdown, randomly spawn on one side of the screen */
         
@@ -89,7 +114,8 @@ class Ball: SKSpriteNode {
         /* Was touch on left/right hand of screen? */
         
         if tapCount >= 1 {
-        
+            let sound = SKAction.playSoundFileNamed("blop.mp3", waitForCompletion: false)
+
             if position.y > height/2 {
                 physicsBody?.velocity = CGVector(dx:0, dy:0)
                 
@@ -97,7 +123,7 @@ class Ball: SKSpriteNode {
                 /* Apply vertical impulse */
                 physicsBody?.applyImpulse(CGVector(dx: 100, dy: -impulse))
 //                tapCount += 1
-                
+                self.run(sound)
                 changeColorTop = true
                 
             } else if position.y < height/2 {
@@ -106,6 +132,8 @@ class Ball: SKSpriteNode {
                 /* Apply vertical impulse */
                 physicsBody?.applyImpulse(CGVector(dx: 100, dy: impulse))
 //                tapCount += 1
+                self.run(sound)
+
                 
                 changeColorBottom = true
             }

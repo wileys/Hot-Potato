@@ -39,6 +39,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var countDown: SKSpriteNode!
     var restartButton: MSButtonNode!
     var menuButton: MSButtonNode!
+    var pointsLabel: SKLabelNode!
     var topWon = true
     var colorList = [UIColor]()
     var bottomHalf: SKSpriteNode!
@@ -60,6 +61,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         restartButton = childNode(withName: "restartButton") as! MSButtonNode
         menuButton = childNode(withName: "menuButton") as! MSButtonNode
         
+        pointsLabel = childNode(withName: "pointsLabel") as! SKLabelNode
+        
         bottomHalf = childNode(withName: "bottomHalf") as! SKSpriteNode
         topHalf = childNode(withName: "topHalf") as! SKSpriteNode
         
@@ -76,6 +79,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         colorList.append(pink)
         
         colorList.append(green)
+        
+        pointsLabel.isHidden = true
+        
+       
 
         
         restartButton.selectedHandler = {
@@ -157,6 +164,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         checkGravity()
         updateBall()
         changeColors()
+        displayPoints()
         
         
     }
@@ -224,6 +232,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     print("asasd")
                 }
                 
+               pointsLabel.isHidden = true
                 
             }
             
@@ -315,6 +324,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             ball.physicsBody?.mass = 0.3
         }
         
+    }
+    
+    func displayPoints() {
+        if teamWorkMode == true && tapCount >= 1 {
+            pointsLabel.isHidden = false
+         pointsLabel.text = String(tapCount - 1)
+        }
     }
     
 }
